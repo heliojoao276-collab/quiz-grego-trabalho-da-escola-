@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Quiz dos Deuses ⚡</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at top, #0a0a1a, #000);
+    color: white;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+
+    overflow: hidden;
+}
+
+/* COLUNAS */
+.coluna {
+    position: fixed;
+    top: 0;
+    width: 120px;
+    height: 100vh;
+    z-index: 1;
+    background-image: repeating-linear-gradient(
+        to right,
+        #eaeaea,
+        #eaeaea 5px,
+        #d6d6d6 5px,
+        #d6d6d6 10px
+    );
+}
+.esquerda { left: 0; }
+.direita { right: 0; }
+
+/* CONTAINER CENTRAL */
+.container {
+    background: rgba(20,20,40,0.9);
+    padding: 30px;
+    width: 450px;
+    border-radius: 20px;
+    box-shadow: 0 0 40px cyan;
+    position: relative;
+    z-index: 2;
+}
+
+h1 {
+    color: gold;
+}
+
+button {
+    width: 90%;
+    padding: 12px;
+    margin: 8px;
+    border-radius: 10px;
+    background: linear-gradient(45deg, #00c6ff, #0072ff);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+input {
+    padding: 10px;
+    margin: 5px;
+    width: 80%;
+}
+
+/* PÓDIO */
+.ouro { background: gold; color: black; }
+.prata { background: silver; color: black; }
+.bronze { background: #cd7f32; color: black; }
+
+/* RAIOS */
+.raio-path {
+    stroke: cyan;
+    stroke-width: 2;
+    fill: none;
+    filter: drop-shadow(0 0 10px cyan);
+    animation: flash 0.3s linear;
+}
+
+@keyframes flash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="coluna esquerda"></div>
+<div class="coluna direita"></div>
+
+<div class="container">
+<h1>⚡ Quiz dos Deuses</h1>
+
+<div id="setup">
+<input id="p1" placeholder="Jogador 1"><br>
+<input id="p2" placeholder="Jogador 2"><br>
+<input id="p3" placeholder="Jogador 3"><br>
+<button onclick="iniciar()">Começar</button>
+</div>
+
+<div id="quiz" style="display:none;">
+<h3 id="playerTurn"></h3>
+<p id="pergunta"></p>
+<div id="respostas"></div>
+</div>
+
+<div id="resultado" style="display:none;">
+<h2>🏆 Pódio</h2>
+<div id="podio"></div>
+</div>
+
+</div>
+
+<audio id="acerto" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
+<audio id="erro" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+
+<script>
+// 21 PERGUNTAS ÚNICAS
+const perguntas = [
+{pergunta:"Na mitologia grega, qual divindade era considerada o soberano do Monte Olimpo, responsável por manter a ordem entre deuses e humanos?",opcoes:["Zeus","Hades","Apolo","Ares"],correta:0},
+{pergunta:"Qual deus governava os mares e era conhecido por provocar terremotos com seu tridente?",opcoes:["Poseidon","Zeus","Hermes","Ares"],correta:0},
+{pergunta:"Qual deusa, segundo a tradição mitológica, nasceu da espuma do mar e representa o amor e a beleza?",opcoes:["Afrodite","Hera","Atena","Ártemis"],correta:0},
+{pergunta:"Qual deus era o governante do submundo?",opcoes:["Hades","Zeus","Poseidon","Apolo"],correta:0},
+{pergunta:"Quem era o mensageiro dos deuses e também responsável por conduzir as almas ao submundo?",opcoes:["Hermes","Ares","Apolo","Dionísio"],correta:0},
+{pergunta:"Quem era a deusa da sabedoria e estratégia de guerra?",opcoes:["Atena","Afrodite","Hera","Perséfone"],correta:0},
+{pergunta:"Quem era conhecido como o deus da guerra?",opcoes:["Ares","Zeus","Hades","Apolo"],correta:0},
+
+{pergunta:"Quem criou o labirinto do Minotauro?",opcoes:["Dédalo","Hércules","Perseu","Teseu"],correta:0},
+{pergunta:"Quem derrotou o Minotauro?",opcoes:["Teseu","Aquiles","Ulisses","Hércules"],correta:0},
+{pergunta:"Herói da Guerra de Troia conhecido por sua força?",opcoes:["Aquiles","Perseu","Hércules","Teseu"],correta:0},
+{pergunta:"Quem derrotou Medusa?",opcoes:["Perseu","Aquiles","Hércules","Ulisses"],correta:0},
+{pergunta:"Deus do vinho?",opcoes:["Dionísio","Apolo","Hermes","Ares"],correta:0},
+{pergunta:"Deus do sol?",opcoes:["Apolo","Zeus","Hefesto","Ares"],correta:0},
+{pergunta:"Deusa da caça?",opcoes:["Ártemis","Hera","Afrodite","Atena"],correta:0},
+
+{pergunta:"Quem roubou o fogo dos deuses?",opcoes:["Prometeu","Hades","Zeus","Ares"],correta:0},
+{pergunta:"Quem foi condenado a empurrar uma pedra eternamente?",opcoes:["Sísifo","Prometeu","Hércules","Perseu"],correta:0},
+{pergunta:"Herói dos 12 trabalhos?",opcoes:["Hércules","Aquiles","Ulisses","Perseu"],correta:0},
+{pergunta:"Esposa de Zeus?",opcoes:["Hera","Afrodite","Atena","Ártemis"],correta:0},
+{pergunta:"Quem tentou voar com asas de cera?",opcoes:["Ícaro","Perseu","Aquiles","Ulisses"],correta:0},
+{pergunta:"Quem escreveu a Odisseia?",opcoes:["Homero","Platão","Sócrates","Aristóteles"],correta:0},
+{pergunta:"Quem enfrentou a Hidra?",opcoes:["Hércules","Perseu","Teseu","Aquiles"],correta:0}
+];
+
+let jogadores=[];
+let pontos={};
+let jAtual=0;
+let pAtual=0;
+
+function iniciar(){
+    jogadores=[p1.value,p2.value,p3.value];
+    jogadores.forEach(j=>pontos[j]=0);
+
+    setup.style.display="none";
+    quiz.style.display="block";
+
+    mostrar();
+}
+
+function mostrar(){
+    if(pAtual>=7){pAtual=0;jAtual++;}
+    if(jAtual>=jogadores.length){finalizar();return;}
+
+    let indice=jAtual*7+pAtual;
+    let p=perguntas[indice];
+
+    playerTurn.innerText="⚔️ "+jogadores[jAtual];
+    pergunta.innerText=p.pergunta;
+
+    respostas.innerHTML="";
+    p.opcoes.forEach((op,i)=>{
+        respostas.innerHTML+=`<button onclick="responder(${i})">${op}</button>`;
+    });
+}
+
+function responder(op){
+    let indice=jAtual*7+pAtual;
+    let p=perguntas[indice];
+
+    if(op===p.correta){pontos[jogadores[jAtual]]++;acerto.play();}
+    else{erro.play();}
+
+    pAtual++;
+    mostrar();
+}
+
+function finalizar(){
+    quiz.style.display="none";
+    resultado.style.display="block";
+
+    let ranking=Object.entries(pontos).sort((a,b)=>b[1]-a[1]);
+
+    podio.innerHTML=`
+    <div class="ouro">🥇 ${ranking[0][0]} - ${ranking[0][1]}</div>
+    <div class="prata">🥈 ${ranking[1][0]} - ${ranking[1][1]}</div>
+    <div class="bronze">🥉 ${ranking[2][0]} - ${ranking[2][1]}</div>
+    `;
+}
+
+// ⚡ RAIOS DO TOPO
+function criarRaio(){
+    const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("width",window.innerWidth);
+    svg.setAttribute("height",window.innerHeight);
+    svg.style.position="fixed";
+    svg.style.top="0";
+    svg.style.left="0";
+    svg.style.zIndex="1";
+
+    const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+
+    let x=Math.random()*window.innerWidth;
+    let y=0;
+
+    let d=`M ${x} ${y}`;
+
+    for(let i=0;i<25;i++){
+        x+=(Math.random()-0.5)*80;
+        y+=Math.random()*40;
+        d+=` L ${x} ${y}`;
+    }
+
+    path.setAttribute("d",d);
+    path.classList.add("raio-path");
+
+    svg.appendChild(path);
+    document.body.appendChild(svg);
+
+    setTimeout(()=>svg.remove(),300);
+}
+
+setInterval(criarRaio,700);
+</script>
+
+</body>
+</html>
